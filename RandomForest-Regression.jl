@@ -7,24 +7,37 @@ using InteractiveUtils
 # ╔═╡ acdb3423-cecc-4bad-bc96-ad59a4ff8541
 using MLJ, Random, Plots, MLJLinearModels, MLJDecisionTreeInterface, CSV, DataFrames
 
+# ╔═╡ 07f1d3e0-0fd3-49e1-b63f-715f95b69e64
+md"""
+## Modelling - Random Forest Regression model
+In This file a Random Forest Regression model has been implemented.
+It is first trained on the cleveland dataset and then evaluated on the other datasets to see if it generalises well. But before this the model is tuned to find the most optimal hyperparameters.
+"""
+
 # ╔═╡ cf3a19b3-b1b8-4a6c-b8f7-5080d0f21767
 DecisionTreeRegressor = @load DecisionTreeRegressor pkg=DecisionTree verbosity=0
 
-# ╔═╡ e2f14947-397e-4058-aca4-9b786d833303
-# Plan
-# Setup
-# Find bedste settings
-# Evaluation
-# Prøv på andre dataset
-# Se om det fungere ligeså godt
+# ╔═╡ da09df83-a3c0-4bc9-bf1a-ab622a9990cc
+md"""
+#### Preparing data
+The datafile is read and then split into training data and labels.
+"""
 
 # ╔═╡ 0c57064d-f127-44fd-af4d-125d3a471938
 begin
-	df = CSV.read("processed.cleveland.data", DataFrame)
+	df = CSV.read("imp_fDS2.csv", DataFrame)
 
 	y = df[:, end]
 	X = df[:, 1:end - 1]
+
+	size(df)
 end
+
+# ╔═╡ 22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
+md"""
+#### Setting up the model
+Here an ensemble of decision trees are setup, creating a random forest model. A default model with 100 trees is tested to get a baseline on the dataset. Crossvalidation is used for the evaluation with the metric being Root mean square error.
+"""
 
 # ╔═╡ ff21eeac-0e7e-418a-a5ad-d8be43577ad7
 begin
@@ -32,57 +45,83 @@ begin
 	tree_reg = DecisionTreeRegressor()
 	forest = EnsembleModel(model=tree_reg, n=100)
 	mach = machine(forest, X, y, scitype_check_level=0)
-	perf = evaluate!(mach, measure=rms, resampling=CV(nfolds=10), verbosity=0)
+	perf = evaluate!(mach, measure=rms, resampling=CV(nfolds=4), verbosity=0)
 	perf
 end
+
+# ╔═╡ 942dfc36-4626-433b-9762-cfffa8fc551e
+md"""
+The parameters of the model is printed to see which hyperparamters can be tuned in the next step.
+"""
 
 # ╔═╡ 6a69c39e-bbf3-483c-9807-d5fde61fa154
 # Checking the parameters that will be tuned
 params(forest)
 
+# ╔═╡ 57b8e1f2-372d-409b-9702-4d41a9abc294
+md"""
+### Tuning the model
+Here a number of ranges are created with the purpose of tuning the model within these bounds. Since there are so many paramters a low goal has been chosen for the sake of time. Furthermore, some hyperparamters have been commented out to improve performance further, these can be un commented and re-added to the list of ranges. Thorugh a couple of ad-hoc experiments it can be seen that the performance is a bit worse when all hyperparameters are not part of the tuning process.
+"""
+
 # ╔═╡ ce7c715c-ecd3-4ae4-a943-e8894fdc7cda
-# Tuning
 begin
 	Random.seed!(1)
 	r1 = range(forest, :(model.n_subfeatures), lower=3, upper=8)
-	r2 = range(forest, :bagging_fraction, lower=0.4, upper=1.0)
-	r3 = range(forest, :(model.max_depth), lower=2, upper=50)
-	r4 = range(forest, :(model.min_samples_leaf), lower=2, upper=8)
-	r5 = range(forest, :(model.min_samples_split), lower=2, upper=5)
-	r6 = range(forest, :(model.min_purity_increase), lower=0.0, upper=0.5)
-	r7 = range(forest, :n, lower=20, upper=400)
-	tm = TunedModel(model=forest, tuning=Grid(resolution=2),
-	                resampling=CV(nfolds=4), ranges=[r1, r2, r3, r4, r5, r6, r7],
+	#r2 = range(forest, :bagging_fraction, lower=0.4, upper=1.0)
+	r3 = range(forest, :(model.max_depth), lower=2, upper=250)
+	#r4 = range(forest, :(model.min_samples_leaf), lower=2, upper=8)
+	#r5 = range(forest, :(model.min_samples_split), lower=2, upper=5)
+	#r6 = range(forest, :(model.min_purity_increase), lower=0.0, upper=0.5)
+	r7 = range(forest, :n, lower=20, upper=1000)
+	tm = TunedModel(model=forest, tuning=Grid(goal=20),
+	                resampling=CV(nfolds=6), ranges=[r1, r3, r7],
 	                measure=rms)
-	m = machine(tm, X, y, scitype_check_level=0)
+	m = machine(tm, X, y)
 	MLJ.fit!(m);
 end
 
+# ╔═╡ 572c583c-17e8-42d7-a3f7-55490e8209e5
+md"""
+Printing the performance of the best performing model
+"""
+
 # ╔═╡ 9c5b8a04-dc7b-443e-87cf-f28b41112649
-# Best score
 begin
 	rep = report(m)
 	rep.best_history_entry.measurement[1]
 end
 
+# ╔═╡ 00791b32-42fb-48dc-97e8-3a92efd65e3a
+md"""
+Printing the configuration of the best performing model
+"""
+
 # ╔═╡ ccf92271-50d9-408f-b6a8-fcb18d5c3426
 # Best model
 rep.best_history_entry
 
+# ╔═╡ 26f6f0f3-b6a9-4b4f-9a10-1bafab4f5daa
+md"""
+### Plotting tuning results
+"""
+
 # ╔═╡ 4fea79dd-cdf3-4e35-90c7-d99c174f865c
 md""" 
 #### Testing on other datasets
-Testing the model on other datasets, to see if it generalises well """
+Testing the model on other datasets, to see if it generalises well. 
+For this purpose a function has been made to not repeat code.
+"""
 
 # ╔═╡ f244c22c-60e1-4c62-bc56-fd64ca6e57c4
 function eval_on_dataset(file, tunedmodel)
-	df = CSV.read(file, DataFrame)
+	df_fun = CSV.read(file, DataFrame)
 
-	y = df[:, end]
-	X = df[:, 1:end - 1]
+	y_fun = df_fun[:, end]
+	X_fun = df_fun[:, 1:end - 1]
 
-	m = machine(tunedmodel, X, y, scitype_check_level=0)
-	perf = evaluate!(m, measure=rms, resampling=CV(nfolds=4), verbosity=0)
+	model = machine(tunedmodel, X_fun, y_fun)
+	perf = evaluate!(model, measure=rms, resampling=CV(nfolds=6), verbosity=0)
 	return perf
 end
 
@@ -91,6 +130,23 @@ eval_on_dataset("processed.hungarian.data", tm)
 
 # ╔═╡ a9175192-c69d-4b2a-98b0-01df90e5c192
 eval_on_dataset("processed.switzerland.data", tm)
+
+# ╔═╡ 18d8745e-4cea-46e2-bf39-6d3730d961f4
+eval_on_dataset("processed.cleveland.data", tm)
+
+# ╔═╡ 699e8e3c-f976-4786-bc6e-322eef9cdb53
+md"""
+#### Evaluation on results
+
+"""
+
+# ╔═╡ 426614be-b78c-4022-a6b7-aa35a6715d3b
+md"""
+### Testing on the imputed dataset
+"""
+
+# ╔═╡ 7909a2a1-4b5e-41b6-b17f-0c8fa228bb8a
+#eval_on_dataset("imp_fDS2.csv", tm)
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -1732,18 +1788,29 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
+# ╟─07f1d3e0-0fd3-49e1-b63f-715f95b69e64
 # ╠═acdb3423-cecc-4bad-bc96-ad59a4ff8541
 # ╠═cf3a19b3-b1b8-4a6c-b8f7-5080d0f21767
-# ╠═e2f14947-397e-4058-aca4-9b786d833303
+# ╟─da09df83-a3c0-4bc9-bf1a-ab622a9990cc
 # ╠═0c57064d-f127-44fd-af4d-125d3a471938
+# ╟─22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
 # ╠═ff21eeac-0e7e-418a-a5ad-d8be43577ad7
+# ╟─942dfc36-4626-433b-9762-cfffa8fc551e
 # ╠═6a69c39e-bbf3-483c-9807-d5fde61fa154
+# ╟─57b8e1f2-372d-409b-9702-4d41a9abc294
 # ╠═ce7c715c-ecd3-4ae4-a943-e8894fdc7cda
+# ╟─572c583c-17e8-42d7-a3f7-55490e8209e5
 # ╠═9c5b8a04-dc7b-443e-87cf-f28b41112649
+# ╟─00791b32-42fb-48dc-97e8-3a92efd65e3a
 # ╠═ccf92271-50d9-408f-b6a8-fcb18d5c3426
+# ╟─26f6f0f3-b6a9-4b4f-9a10-1bafab4f5daa
 # ╟─4fea79dd-cdf3-4e35-90c7-d99c174f865c
 # ╠═f244c22c-60e1-4c62-bc56-fd64ca6e57c4
 # ╠═c3768305-5465-4a5a-ace4-7cc4028455de
 # ╠═a9175192-c69d-4b2a-98b0-01df90e5c192
+# ╠═18d8745e-4cea-46e2-bf39-6d3730d961f4
+# ╠═699e8e3c-f976-4786-bc6e-322eef9cdb53
+# ╟─426614be-b78c-4022-a6b7-aa35a6715d3b
+# ╠═7909a2a1-4b5e-41b6-b17f-0c8fa228bb8a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

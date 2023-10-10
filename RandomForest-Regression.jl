@@ -55,8 +55,8 @@ begin
 	yt, Xt = unpack(test_data, ==(:num),name->true);
 	Xc = coerce(X, autotype(X, :discrete_to_continuous));
 	Xtc = coerce(Xt, autotype(Xt, :discrete_to_continuous));
-	cy = categorical(y)
-	cyt = categorical(yt)
+	yc = coerce(y, autotype(y, :discrete_to_continuous));
+	ytc = coerce(yt, autotype(yt, :discrete_to_continuous));
 end
 
 # ╔═╡ 0c57064d-f127-44fd-af4d-125d3a471938
@@ -83,7 +83,7 @@ begin
 	Random.seed!(1)
 	tree_reg = DecisionTreeRegressor()
 	forest = EnsembleModel(model=tree_reg, n=100)
-	mach = machine(forest, Xc, cy, scitype_check_level=0)
+	mach = machine(forest, Xc, yc, scitype_check_level=0)
 	perf = evaluate!(mach, measure=rms, resampling=CV(nfolds=10))
 	perf
 end
@@ -142,7 +142,7 @@ rep.best_history_entry
 
 # ╔═╡ 49a945c0-b62c-4fec-9443-8edcdd46ee0e
 # Eval
-tuned_perf = evaluate!(m, measure=rms, resampling=CV(nfolds=6), verbosity=0)
+tuned_perf = evaluate!(m, measure=rms, resampling=CV(nfolds=10), verbosity=0)
 
 # ╔═╡ 26f6f0f3-b6a9-4b4f-9a10-1bafab4f5daa
 md"""
@@ -215,7 +215,7 @@ begin
 	custom_tree = DecisionTreeRegressor(n_subfeatures=feature, min_samples_leaf=min_leaf, max_depth=max_depth, min_samples_split=split)
 	custom_forest = EnsembleModel(model=custom_tree, n=trees, bagging_fraction=bag)
 	custom_mach = machine(custom_forest, X, y, scitype_check_level=0)
-	custom_perf = evaluate!(custom_mach, measure=rms, resampling=CV(nfolds=6), verbosity=0)
+	custom_perf = evaluate!(custom_mach, measure=rms, resampling=CV(nfolds=10), verbosity=0)
 	custom_perf
 end
 
@@ -244,7 +244,7 @@ function eval_on_dataset(file, tunedmodel)
 	X_fun = df_fun[:, 1:end - 1]
 
 	model = machine(tunedmodel, X_fun, y_fun)
-	perf = evaluate!(model, measure=rms, resampling=CV(nfolds=6), verbosity=0)
+	perf = evaluate!(model, measure=rms, resampling=CV(nfolds=10), verbosity=0)
 	return perf
 end
 

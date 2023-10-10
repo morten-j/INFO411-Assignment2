@@ -17,6 +17,17 @@ end
 # ╔═╡ acdb3423-cecc-4bad-bc96-ad59a4ff8541
 using MLJ, Random, Plots, MLJLinearModels, MLJDecisionTreeInterface, CSV, DataFrames, PlutoUI, HypertextLiteral, StatsPlots
 
+# ╔═╡ 4a204d99-c49d-49ce-91e6-926a28cd797e
+begin
+	using HTTP
+	github_tr_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2.csv"
+	github_te_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2_test.csv"
+	response_tr = HTTP.get(github_tr_url)
+	response_te = HTTP.get(github_te_url)
+	train_data = (CSV.File(IOBuffer(response_tr.body))) |> DataFrame
+	test_data = (CSV.File(IOBuffer(response_te.body))) |> DataFrame
+end
+
 # ╔═╡ 07f1d3e0-0fd3-49e1-b63f-715f95b69e64
 md"""
 ## Modelling - Random Forest Regression model
@@ -36,7 +47,21 @@ md"""
 The imputed datafile is read and then split into training data and labels.
 """
 
+# ╔═╡ 963b0abd-cd8d-43cf-a6f3-f853e2064035
+begin
+	coerce!(train_data, :num => OrderedFactor{2});
+	coerce!(test_data, :num => OrderedFactor{2});
+    y, X = unpack(train_data, ==(:num),name->true);
+	yt, Xt = unpack(test_data, ==(:num),name->true);
+	Xc = coerce(X, autotype(X, :discrete_to_continuous));
+	Xtc = coerce(Xt, autotype(Xt, :discrete_to_continuous));
+	cy = categorical(y)
+	cyt = categorical(yt)
+end
+
 # ╔═╡ 0c57064d-f127-44fd-af4d-125d3a471938
+# ╠═╡ disabled = true
+#=╠═╡
 begin
 	df = CSV.read("imp_fDS2.csv", DataFrame)
 
@@ -45,6 +70,7 @@ begin
 
 	size(df)
 end
+  ╠═╡ =#
 
 # ╔═╡ 22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
 md"""
@@ -57,8 +83,8 @@ begin
 	Random.seed!(1)
 	tree_reg = DecisionTreeRegressor()
 	forest = EnsembleModel(model=tree_reg, n=100)
-	mach = machine(forest, X, y, scitype_check_level=0)
-	perf = evaluate!(mach, measure=rms, resampling=CV(nfolds=4), verbosity=0)
+	mach = machine(forest, Xc, cy, scitype_check_level=0)
+	perf = evaluate!(mach, measure=rms, resampling=CV(nfolds=10))
 	perf
 end
 
@@ -81,14 +107,14 @@ Here a number of ranges are created with the purpose of tuning the model within 
 begin
 	Random.seed!(1)
 	r1 = range(forest, :(model.n_subfeatures), lower=3, upper=8)
-	#r2 = range(forest, :bagging_fraction, lower=0.4, upper=1.0)
+	r2 = range(forest, :bagging_fraction, lower=0.4, upper=1.0)
 	r3 = range(forest, :(model.max_depth), lower=2, upper=250)
-	#r4 = range(forest, :(model.min_samples_leaf), lower=2, upper=8)
-	#r5 = range(forest, :(model.min_samples_split), lower=2, upper=5)
-	#r6 = range(forest, :(model.min_purity_increase), lower=0.0, upper=0.5)
+	r4 = range(forest, :(model.min_samples_leaf), lower=2, upper=8)
+	r5 = range(forest, :(model.min_samples_split), lower=2, upper=5)
+	r6 = range(forest, :(model.min_purity_increase), lower=0.0, upper=0.5)
 	r7 = range(forest, :n, lower=20, upper=500)
 	tm = TunedModel(model=forest, tuning=Grid(goal=10),
-	                resampling=CV(nfolds=6), ranges=[r1, r3, r7],
+	                resampling=CV(nfolds=10), ranges=[r1, r3, r7],
 	                measure=rms)
 	m = machine(tm, X, y)
 	MLJ.fit!(m);
@@ -206,9 +232,8 @@ end
 
 # ╔═╡ 4fea79dd-cdf3-4e35-90c7-d99c174f865c
 md""" 
-#### Testing on other datasets
-Testing the model on other datasets, to see if it generalises well. 
-For this purpose a function has been made to not repeat code.
+#### Testing on the test set
+Testing the model on the test dataset, to see if it generalises well. 
 """
 
 # ╔═╡ f244c22c-60e1-4c62-bc56-fd64ca6e57c4
@@ -252,6 +277,7 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
@@ -264,6 +290,7 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 [compat]
 CSV = "~0.10.11"
 DataFrames = "~1.6.1"
+HTTP = "~1.10.0"
 HypertextLiteral = "~0.9.4"
 MLJ = "~0.19.5"
 MLJDecisionTreeInterface = "~0.4.0"
@@ -279,7 +306,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "a98ad7e57bc2107b95d1bd94a3e9174240539969"
+project_hash = "01c8e2460a72416dec2d2001937c1f405a495aac"
 
 [[deps.ARFFFiles]]
 deps = ["CategoricalArrays", "Dates", "Parsers", "Tables"]
@@ -2080,6 +2107,8 @@ version = "1.4.1+1"
 # ╠═cf3a19b3-b1b8-4a6c-b8f7-5080d0f21767
 # ╠═5617ea73-195b-4048-92e0-d82206427ebc
 # ╟─da09df83-a3c0-4bc9-bf1a-ab622a9990cc
+# ╠═4a204d99-c49d-49ce-91e6-926a28cd797e
+# ╠═963b0abd-cd8d-43cf-a6f3-f853e2064035
 # ╠═0c57064d-f127-44fd-af4d-125d3a471938
 # ╟─22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
 # ╠═ff21eeac-0e7e-418a-a5ad-d8be43577ad7

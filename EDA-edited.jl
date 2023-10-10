@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.26
+# v0.19.27
 
 using Markdown
 using InteractiveUtils
@@ -24,7 +24,7 @@ First, we start with DS1:
 
 # ╔═╡ 1aa768d0-59ac-11ee-30c7-158c22d92d8c
 md"""
-##### 1.Loading 
+##### 1. Loading 
 attribute names and the dataset
 """
 
@@ -234,7 +234,7 @@ md"""
 
 # ╔═╡ cbef0fe2-1dbc-4295-8e6c-9754eef80a7a
 md"""
-##### 1.Loading 
+##### 1. Loading 
 attribute names and the dataset
 """
 
@@ -251,7 +251,7 @@ end
 
 # ╔═╡ 78148ed4-8db1-4322-8571-9f62f8e963fe
 md"""
-##### 2.Datasets profile 
+##### 2. Datasets profile 
 """
 
 # ╔═╡ ba1649ff-a0d2-40d4-90a2-7bb7a13e19e8
@@ -267,7 +267,7 @@ md"""
 
 # ╔═╡ a8ea2512-54c4-46c8-a415-aa8fe5b05799
 md"""
-##### 3.Handling data type
+##### 3. Handling data type
 String numbers are converted to floats and "?" to missing values.
 """
 
@@ -566,7 +566,7 @@ StatsBase = "~0.34.2"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.9.2"
+julia_version = "1.9.3"
 manifest_format = "2.0"
 project_hash = "8cadc14042d836cd017292a4b8730a06ade88870"
 
@@ -2459,7 +2459,7 @@ version = "1.4.1+1"
 # ╔═╡ Cell order:
 # ╟─12dc6fc9-2b5f-468b-8c24-132fb0e59a80
 # ╠═4b4144af-b157-44c8-9a5b-99205aea7d0c
-# ╠═1aa768d0-59ac-11ee-30c7-158c22d92d8c
+# ╟─1aa768d0-59ac-11ee-30c7-158c22d92d8c
 # ╠═737ac898-3878-4321-ac20-25357f4e8a99
 # ╠═cac1705d-45fb-4810-b8fd-4222694de63d
 # ╟─5e53d8ff-7d4d-4b37-84a6-99f2d6f66ee5
@@ -2479,7 +2479,7 @@ version = "1.4.1+1"
 # ╟─8203ccb6-8f9a-4667-98f2-73b9ec53b7de
 # ╠═093d897a-ea47-4627-ac55-e2c3fc2ee681
 # ╟─7b6e47d1-6501-4288-8368-be7c14e754bb
-# ╠═f946b6dc-5d26-472a-b422-4e08bc98b86f
+# ╟─f946b6dc-5d26-472a-b422-4e08bc98b86f
 # ╠═327db6ec-64a2-4995-abb1-5ab9c60d53e2
 # ╠═8fe48e8e-07ea-4b15-b7f1-318b9ff53540
 # ╠═883c63b1-911e-4abb-97bd-c251c46d98cb
@@ -2489,10 +2489,10 @@ version = "1.4.1+1"
 # ╠═4cd233bb-87e5-44ea-94fa-22d58889cae7
 # ╟─cbef0fe2-1dbc-4295-8e6c-9754eef80a7a
 # ╠═24100b21-d0c1-4a01-9fdd-659424e61cce
-# ╠═78148ed4-8db1-4322-8571-9f62f8e963fe
+# ╟─78148ed4-8db1-4322-8571-9f62f8e963fe
 # ╠═ba1649ff-a0d2-40d4-90a2-7bb7a13e19e8
-# ╠═111cb4a1-c9b5-4f7f-8f92-18acaa0c2494
-# ╠═a8ea2512-54c4-46c8-a415-aa8fe5b05799
+# ╟─111cb4a1-c9b5-4f7f-8f92-18acaa0c2494
+# ╟─a8ea2512-54c4-46c8-a415-aa8fe5b05799
 # ╠═de3c953d-10a1-4661-a8a6-b9cac071ac63
 # ╟─d4f7a6e3-15ca-4f15-82b1-d0a35ab7a871
 # ╠═27aca0b8-0ed4-4e48-afda-f5fce5a55469

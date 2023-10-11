@@ -15,30 +15,9 @@ macro bind(def, element)
 end
 
 # ╔═╡ acdb3423-cecc-4bad-bc96-ad59a4ff8541
-using MLJ, Random, Plots, MLJLinearModels, MLJDecisionTreeInterface, CSV, DataFrames, PlutoUI, HypertextLiteral, StatsPlots
-
-# ╔═╡ 07f1d3e0-0fd3-49e1-b63f-715f95b69e64
-md"""
-## Modelling - Random Forest Regression model
-In This file a Random Forest Regression model has been implemented.
-It is first trained on the cleveland dataset and then evaluated on the other datasets to see if it generalises well. But before this the model is tuned to find the most optimal hyperparameters.
-"""
-
-# ╔═╡ cf3a19b3-b1b8-4a6c-b8f7-5080d0f21767
-DecisionTreeRegressor = @load DecisionTreeRegressor pkg=DecisionTree verbosity=0
-
-# ╔═╡ 5617ea73-195b-4048-92e0-d82206427ebc
-# TODO FIX DATA FORMAT, CHECK IF THEY ARE CORRECT N STUFF
-
-# ╔═╡ da09df83-a3c0-4bc9-bf1a-ab622a9990cc
-md"""
-#### Preparing data
-The imputed datafile is read and then split into training data and labels.
-"""
+using MLJ, Random, MLJLinearModels, MLJDecisionTreeInterface, CSV, DataFrames, PlutoUI, HypertextLiteral, StatsPlots
 
 # ╔═╡ 4a204d99-c49d-49ce-91e6-926a28cd797e
-# ╠═╡ disabled = true
-#=╠═╡
 begin
 	using HTTP
 	github_tr_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2.csv"
@@ -48,61 +27,31 @@ begin
 	train_data = (CSV.File(IOBuffer(response_tr.body))) |> DataFrame
 	test_data = (CSV.File(IOBuffer(response_te.body))) |> DataFrame
 end
-  ╠═╡ =#
+
+# ╔═╡ cf3a19b3-b1b8-4a6c-b8f7-5080d0f21767
+DecisionTreeRegressor = @load DecisionTreeRegressor pkg=DecisionTree verbosity=0
 
 # ╔═╡ 963b0abd-cd8d-43cf-a6f3-f853e2064035
-#=╠═╡
 begin
-	coerce!(train_data, :num => OrderedFactor{2});
-	coerce!(test_data, :num => OrderedFactor{2});
-    y, X = unpack(train_data, ==(:num),name->true);
-	yt, Xt = unpack(test_data, ==(:num),name->true);
-	Xc = coerce(X, autotype(X, :discrete_to_continuous));
-	Xtc = coerce(Xt, autotype(Xt, :discrete_to_continuous));
-	yc = coerce(y, autotype(y, :discrete_to_continuous));
-	ytc = coerce(yt, autotype(yt, :discrete_to_continuous));
+	con_train_data = coerce(train_data, autotype(train_data, :discrete_to_continuous));
+	con_test_data = coerce(test_data, autotype(test_data, :discrete_to_continuous));
+    ytr, Xtr = unpack(con_train_data, ==(:num),name->true);
+	yte, Xte = unpack(con_test_data, ==(:num),name->true);
 end
-  ╠═╡ =#
-
-# ╔═╡ 0c57064d-f127-44fd-af4d-125d3a471938
-begin
-	df = CSV.read("imp_fDS2.csv", DataFrame)
-	train, test = partition(df, 0.7, shuffle=true)
-
-	y = train[:, end]
-	X = train[:, 1:end - 1]
-end
-
-# ╔═╡ 22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
-md"""
-#### Setting up the model
-Here an ensemble of decision trees are setup, creating a random forest model. A default model with 100 trees is tested to get a baseline on the dataset. Crossvalidation is used for the evaluation with the metric being Root mean square error.
-"""
 
 # ╔═╡ ff21eeac-0e7e-418a-a5ad-d8be43577ad7
 begin
 	Random.seed!(1)
 	tree_reg = DecisionTreeRegressor()
 	forest = EnsembleModel(model=tree_reg, n=100)
-	mach = machine(forest, X, y, scitype_check_level=0)
+	mach = machine(forest, Xtr, ytr, scitype_check_level=0)
 	perf = evaluate!(mach, measure=rms, resampling=CV(nfolds=10))
 	perf
 end
 
-# ╔═╡ 942dfc36-4626-433b-9762-cfffa8fc551e
-md"""
-The parameters of the model is printed to see which hyperparamters can be tuned in the next step.
-"""
-
-# ╔═╡ 6a69c39e-bbf3-483c-9807-d5fde61fa154
+# ╔═╡ 6dd46c91-019e-4604-8f74-20d1aaa55dc0
 # Checking the parameters that will be tuned
 params(forest)
-
-# ╔═╡ 57b8e1f2-372d-409b-9702-4d41a9abc294
-md"""
-### Tuning the model
-Here a number of ranges are created with the purpose of tuning the model within these bounds. Since there are so many paramters a low goal has been chosen for the sake of time. Furthermore, some hyperparamters have been commented out to improve performance further, these can be un commented and re-added to the list of ranges. Thorugh a couple of ad-hoc experiments it can be seen that the performance is a bit worse when all hyperparameters are not part of the tuning process.
-"""
 
 # ╔═╡ ce7c715c-ecd3-4ae4-a943-e8894fdc7cda
 begin
@@ -112,19 +61,13 @@ begin
 	r3 = range(forest, :(model.max_depth), lower=2, upper=500)
 	r4 = range(forest, :(model.min_samples_leaf), lower=2, upper=8)
 	r5 = range(forest, :(model.min_samples_split), lower=2, upper=5)
-	r6 = range(forest, :(model.min_purity_increase), lower=0.0, upper=0.5)
-	r7 = range(forest, :n, lower=20, upper=500)
+	r6 = range(forest, :n, lower=20, upper=500)
 	tm = TunedModel(model=forest, tuning=Grid(goal=15),
-	                resampling=CV(nfolds=10), ranges=[r1, r3, r7],
+	                resampling=CV(nfolds=10), ranges=[r1, r2, r3, r4, r5, r6],
 	                measure=rms)
-	m = machine(tm, X, y, scitype_check_level=0)
+	m = machine(tm, Xtr, ytr, scitype_check_level=0)
 	MLJ.fit!(m);
 end
-
-# ╔═╡ 572c583c-17e8-42d7-a3f7-55490e8209e5
-md"""
-Printing the performance of the best performing model
-"""
 
 # ╔═╡ 9c5b8a04-dc7b-443e-87cf-f28b41112649
 begin
@@ -132,18 +75,101 @@ begin
 	rep.best_history_entry.measurement[1]
 end
 
+# ╔═╡ ccf92271-50d9-408f-b6a8-fcb18d5c3426
+# Best model
+rep.best_history_entry
+
+# ╔═╡ ca15a542-3525-4510-ad21-209022125a84
+res = rep.plotting
+
+# ╔═╡ cec0e8c6-2995-4263-859c-71d32929d362
+@bind par1 Radio(res.parameter_names, default="model.max_depth")
+
+# ╔═╡ e41f14a2-e040-4602-b160-70138dc2e1d8
+@bind par2 Radio(res.parameter_names, default="n")
+
+# ╔═╡ b5d7e27d-be5d-45ab-a198-fbeda1c3c456
+begin
+	using PyPlot
+	vals_sf = res.parameter_values[:, findall(x -> x == par1, res.parameter_names)[1]]
+	vals_bf = res.parameter_values[:, findall(x -> x == par2, res.parameter_names)[1]]
+	pyplot()
+	p = figure(figsize=(10,6))
+	tricontourf(vals_sf, vals_bf, res.measurements, cmap=get_cmap("hot"))
+	xlabel(par1, fontsize=14)
+	ylabel(par2, fontsize=14)
+	colorbar(label="RMS")
+	p
+end
+
+# ╔═╡ 07f1d3e0-0fd3-49e1-b63f-715f95b69e64
+md"""
+## Modelling - Random Forest Regression model
+In This file a Random Forest Regression model has been implemented.
+It is first trained on the cleveland dataset and then evaluated on the other datasets to see if it generalises well. But before this the model is tuned to find the most optimal hyperparameters.
+"""
+
+# ╔═╡ da09df83-a3c0-4bc9-bf1a-ab622a9990cc
+md"""
+#### Preparing data
+The imputed datafile is read and then split into training, test data and labels.
+"""
+
+# ╔═╡ 22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
+md"""
+#### Setting up the model
+Here an ensemble of decision trees are setup, creating a random forest model. A default model with 100 trees is tested to get a baseline on the dataset. Crossvalidation is used for the evaluation with the metric being Root mean square error.
+"""
+
+# ╔═╡ 942dfc36-4626-433b-9762-cfffa8fc551e
+md"""
+The parameters of the model is printed to see which hyperparamters can be tuned in the next step.
+"""
+
+# ╔═╡ 57b8e1f2-372d-409b-9702-4d41a9abc294
+md"""
+### Tuning the model
+Here a number of ranges are created with the purpose of tuning the model within these bounds. Since there are so many paramters a low goal has been chosen for the sake of time. Furthermore, some hyperparamters have been commented out to improve performance further, these can be un commented and re-added to the list of ranges. Thorugh a couple of ad-hoc experiments it can be seen that the performance is a bit worse when all hyperparameters are not part of the tuning process.
+"""
+
+# ╔═╡ 572c583c-17e8-42d7-a3f7-55490e8209e5
+md"""
+Printing the performance of the best performing model
+"""
+
 # ╔═╡ 00791b32-42fb-48dc-97e8-3a92efd65e3a
 md"""
 Printing the configuration of the best performing model
 """
 
-# ╔═╡ ccf92271-50d9-408f-b6a8-fcb18d5c3426
-# Best model
-rep.best_history_entry
+# ╔═╡ c1aff38f-06ab-4d1a-97ff-72625ff2b517
+md"""
+### Visualisation using dashboard
+"""
+
+# ╔═╡ 019c44ec-d009-469b-ab6e-a83521e4494c
+md"""
+Below a contour visualization of the performance versus two parameter ranges has been made using user input via PlutoUI. This should help get an intuition about how the different ranges affect the performance of the model.
+"""
+
+# ╔═╡ 76f3e40e-1658-4ced-a034-5b70f7fd724b
+md"""
+Parameter 1
+"""
+
+# ╔═╡ 737bac45-a129-4a6d-8bd4-b51ace2ae8ef
+md"""
+Parameter 2
+"""
 
 # ╔═╡ 26f6f0f3-b6a9-4b4f-9a10-1bafab4f5daa
 md"""
 #### Custom tuning using a dashboard
+"""
+
+# ╔═╡ 10b21a93-d32c-4b4b-9f3c-82350a5cd2f1
+md"""
+Below a custom model can be made using the sliders to change the hyperparameters.
 """
 
 # ╔═╡ 15b5acb6-51c4-4610-8ff1-574ef49b2505
@@ -211,7 +237,7 @@ end
 begin
 	custom_tree = DecisionTreeRegressor(n_subfeatures=feature, min_samples_leaf=min_leaf, max_depth=max_depth, min_samples_split=split)
 	custom_forest = EnsembleModel(model=custom_tree, n=trees, bagging_fraction=bag)
-	custom_mach = machine(custom_forest, X, y, scitype_check_level=0)
+	custom_mach = machine(custom_forest, Xtr, ytr, scitype_check_level=0)
 	custom_perf = evaluate!(custom_mach, measure=rms, resampling=CV(nfolds=10), verbosity=0)
 	custom_perf
 end
@@ -219,6 +245,11 @@ end
 # ╔═╡ 581eb4e9-62f1-4719-8b7f-e368fdadbef6
 md"""
 ##### Comparision of tuned model and custom/dashboard model
+"""
+
+# ╔═╡ d20953b5-36c0-42d1-8e9a-826255c6ae11
+md"""
+Below a comparision of the tuned model and the custom model can be seen via a violin plot. The comparision of the models is based over the 10 folds that are generated using crossvalidation.
 """
 
 # ╔═╡ 7ffb8e5b-4007-43c8-9be0-330f6a39f73b
@@ -230,34 +261,25 @@ end
 # ╔═╡ 4fea79dd-cdf3-4e35-90c7-d99c174f865c
 md""" 
 #### Testing on the test set
-Testing the model on the test dataset, to see if it generalises well on data that the model has never seen berfore. 
+Testing the tuned model on the test dataset, to see if it generalises well on data that the model has never seen berfore. 
 """
 
-# ╔═╡ f244c22c-60e1-4c62-bc56-fd64ca6e57c4
-function eval_on_dataset(df_fun, tunedmodel)
-	y_fun = df_fun[:, end]
-	X_fun = df_fun[:, 1:end - 1]
-
-	model = machine(tunedmodel, X_fun, y_fun)
-	perf = evaluate!(model, measure=rms, resampling=CV(nfolds=10), verbosity=0)
-	return perf
-end
-
-# ╔═╡ c3768305-5465-4a5a-ace4-7cc4028455de
-test_data = eval_on_dataset(test, tm)
+# ╔═╡ ba23fde6-6b4a-4650-b218-a0069ab25093
+test_perf = evaluate(tm.model, Xte, yte, measure=rms, resampling=CV(nfolds=10), verbosity=0)
 
 # ╔═╡ 699e8e3c-f976-4786-bc6e-322eef9cdb53
 md"""
 #### Evaluation of results
-By running the model on the test dataset we can see it performs almost as well as on the training dataset. This makes sense as the two sets are very similair.
+By running the model on the test dataset we can see it performs a bit worse on the training dataset, but still quite close to the training data set. This makes sense as the two sets are very similair.
 """
 
 # ╔═╡ 46a1a4ca-aedc-4720-b6e8-784cd6f3aa7a
 begin
-	plot(1:10, test_data.per_fold, label="Test RMS per fold")
-	plot!(1:10, rep.history[1].per_fold, label="Training RMS per fold")
-	xlabel!("Fold #")
-	ylabel!("RMS")
+	import Plots
+	Plots.plot(1:10, test_perf.per_fold, label="Test RMS per fold")
+	Plots.plot!(1:10, rep.history[1].per_fold, label="Training RMS per fold")
+	Plots.xlabel!("Fold #")
+	Plots.ylabel!("RMS")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -265,24 +287,28 @@ PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
 MLJLinearModels = "6ee0df7b-362f-4a72-a706-9e79364fb692"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 
 [compat]
 CSV = "~0.10.11"
 DataFrames = "~1.6.1"
+HTTP = "~1.10.0"
 HypertextLiteral = "~0.9.4"
 MLJ = "~0.19.5"
 MLJDecisionTreeInterface = "~0.4.0"
 MLJLinearModels = "~0.9.2"
 Plots = "~1.39.0"
 PlutoUI = "~0.7.52"
+PyPlot = "~2.11.2"
 StatsPlots = "~0.15.6"
 """
 
@@ -292,7 +318,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "a98ad7e57bc2107b95d1bd94a3e9174240539969"
+project_hash = "17d9fc66a8e0e03bfc8c21b3a5c03cc1057b60da"
 
 [[deps.ARFFFiles]]
 deps = ["CategoricalArrays", "Dates", "Parsers", "Tables"]
@@ -524,6 +550,12 @@ git-tree-sha1 = "5372dbbf8f0bdb8c700db5367132925c0771ef7e"
 uuid = "f0e56b4a-5159-44fe-b623-3e5288b988bb"
 version = "2.2.1"
 
+[[deps.Conda]]
+deps = ["Downloads", "JSON", "VersionParsing"]
+git-tree-sha1 = "8c86e48c0db1564a1d49548d3515ced5d604c408"
+uuid = "8f4d0f93-b110-5947-807f-2305c1781a2d"
+version = "1.9.1"
+
 [[deps.ConstructionBase]]
 deps = ["LinearAlgebra"]
 git-tree-sha1 = "c53fc348ca4d40d7b371e71fd52251839080cbc9"
@@ -600,12 +632,13 @@ version = "1.15.1"
 
 [[deps.Distances]]
 deps = ["LinearAlgebra", "Statistics", "StatsAPI"]
-git-tree-sha1 = "b6def76ffad15143924a2199f72a5cd883a2e8a9"
+git-tree-sha1 = "5225c965635d8c21168e32a12954675e7bea1151"
 uuid = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
-version = "0.10.9"
-weakdeps = ["SparseArrays"]
+version = "0.10.10"
+weakdeps = ["ChainRulesCore", "SparseArrays"]
 
     [deps.Distances.extensions]
+    DistancesChainRulesCoreExt = "ChainRulesCore"
     DistancesSparseArraysExt = "SparseArrays"
 
 [[deps.Distributed]]
@@ -693,9 +726,9 @@ version = "3.3.10+0"
 
 [[deps.FilePathsBase]]
 deps = ["Compat", "Dates", "Mmap", "Printf", "Test", "UUIDs"]
-git-tree-sha1 = "e27c4ebe80e8699540f2d6c805cc12203b614f12"
+git-tree-sha1 = "9f00e42f8d99fdde64d40c8ea5d14269a2e2c1aa"
 uuid = "48062228-2e41-5def-b9a4-89aafe57970f"
-version = "0.9.20"
+version = "0.9.21"
 
 [[deps.FileWatching]]
 uuid = "7b1f6079-737a-58dc-b8bc-7a2ca5c1b5ee"
@@ -1062,9 +1095,9 @@ uuid = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 
 [[deps.LinearMaps]]
 deps = ["LinearAlgebra"]
-git-tree-sha1 = "6698ab5e662b47ffc63a82b2f43c1cee015cf80d"
+git-tree-sha1 = "9df2ab050ffefe870a09c7b6afdb0cde381703f2"
 uuid = "7a12625a-238d-50fd-b39a-03d52299707e"
-version = "3.11.0"
+version = "3.11.1"
 weakdeps = ["ChainRulesCore", "SparseArrays", "Statistics"]
 
     [deps.LinearMaps.extensions]
@@ -1093,9 +1126,9 @@ uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
 
 [[deps.LoggingExtras]]
 deps = ["Dates", "Logging"]
-git-tree-sha1 = "0d097476b6c381ab7906460ef1ef1638fbce1d91"
+git-tree-sha1 = "c1dd6d7978c12545b4179fb6153b9250c96b0075"
 uuid = "e6f89c97-d47a-5376-807f-9c37f3926c36"
-version = "1.0.2"
+version = "1.0.3"
 
 [[deps.LossFunctions]]
 deps = ["Markdown", "Requires", "Statistics"]
@@ -1174,9 +1207,9 @@ version = "1.9.2"
 
 [[deps.MLJModels]]
 deps = ["CategoricalArrays", "CategoricalDistributions", "Combinatorics", "Dates", "Distances", "Distributions", "InteractiveUtils", "LinearAlgebra", "MLJModelInterface", "Markdown", "OrderedCollections", "Parameters", "Pkg", "PrettyPrinting", "REPL", "Random", "RelocatableFolders", "ScientificTypes", "StatisticalTraits", "Statistics", "StatsBase", "Tables"]
-git-tree-sha1 = "da9f2bfefa08d1a63167cbd9bdd862a44a1b3d9d"
+git-tree-sha1 = "10d221910fc3f3eedad567178ddbca3cc0f776a3"
 uuid = "d491faf4-2d78-11e9-2867-c94bc002c0b7"
-version = "0.16.11"
+version = "0.16.12"
 
 [[deps.MLJTuning]]
 deps = ["ComputationalResources", "Distributed", "Distributions", "LatinHypercubeSampling", "MLJBase", "ProgressMeter", "Random", "RecipesBase"]
@@ -1304,9 +1337,9 @@ version = "0.5.5+0"
 
 [[deps.Optim]]
 deps = ["Compat", "FillArrays", "ForwardDiff", "LineSearches", "LinearAlgebra", "NLSolversBase", "NaNMath", "Parameters", "PositiveFactorizations", "Printf", "SparseArrays", "StatsBase"]
-git-tree-sha1 = "963b004d15216f8129f6c0f7d187efa136570be0"
+git-tree-sha1 = "01f85d9269b13fedc61e63cc72ee2213565f7a72"
 uuid = "429524aa-4258-5aef-a3af-852621145aeb"
-version = "1.7.7"
+version = "1.7.8"
 
 [[deps.Opus_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
@@ -1326,9 +1359,9 @@ version = "10.42.0+0"
 
 [[deps.PDMats]]
 deps = ["LinearAlgebra", "SparseArrays", "SuiteSparse"]
-git-tree-sha1 = "bf6085e8bd7735e68c210c6e5d81f9a6fe192060"
+git-tree-sha1 = "fcf8fd477bd7f33cb8dbb1243653fb0d415c256c"
 uuid = "90014a1f-27ba-587c-ab20-58faa44d9150"
-version = "0.11.19"
+version = "0.11.25"
 
 [[deps.Parameters]]
 deps = ["OrderedCollections", "UnPack"]
@@ -1441,6 +1474,18 @@ git-tree-sha1 = "00099623ffee15972c16111bcf84c58a0051257c"
 uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
 version = "1.9.0"
 
+[[deps.PyCall]]
+deps = ["Conda", "Dates", "Libdl", "LinearAlgebra", "MacroTools", "Serialization", "VersionParsing"]
+git-tree-sha1 = "43d304ac6f0354755f1d60730ece8c499980f7ba"
+uuid = "438e738f-606a-5dbb-bf0a-cddfbfd45ab0"
+version = "1.96.1"
+
+[[deps.PyPlot]]
+deps = ["Colors", "LaTeXStrings", "PyCall", "Sockets", "Test", "VersionParsing"]
+git-tree-sha1 = "9220a9dae0369f431168d60adab635f88aca7857"
+uuid = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+version = "2.11.2"
+
 [[deps.Qt6Base_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Fontconfig_jll", "Glib_jll", "JLLWrappers", "Libdl", "Libglvnd_jll", "OpenSSL_jll", "Vulkan_Loader_jll", "Xorg_libSM_jll", "Xorg_libXext_jll", "Xorg_libXrender_jll", "Xorg_libxcb_jll", "Xorg_xcb_util_cursor_jll", "Xorg_xcb_util_image_jll", "Xorg_xcb_util_keysyms_jll", "Xorg_xcb_util_renderutil_jll", "Xorg_xcb_util_wm_jll", "Zlib_jll", "libinput_jll", "xkbcommon_jll"]
 git-tree-sha1 = "7c29f0e8c575428bd84dc3c72ece5178caa67336"
@@ -1490,9 +1535,9 @@ version = "1.2.2"
 
 [[deps.RelocatableFolders]]
 deps = ["SHA", "Scratch"]
-git-tree-sha1 = "90bc7a7c96410424509e4263e277e43250c05691"
+git-tree-sha1 = "ffdaf70d81cf6ff22c2b6e733c900c3321cab864"
 uuid = "05181044-ff0b-4ac5-8273-598c1e38db00"
-version = "1.0.0"
+version = "1.0.1"
 
 [[deps.Requires]]
 deps = ["UUIDs"]
@@ -1721,9 +1766,9 @@ uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.9.13"
 
 [[deps.Tricks]]
-git-tree-sha1 = "aadb748be58b492045b4f56166b5188aa63ce549"
+git-tree-sha1 = "eae1bb484cd63b36999ee58be2de6c178105112f"
 uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
-version = "0.1.7"
+version = "0.1.8"
 
 [[deps.URIs]]
 git-tree-sha1 = "b7a5e99f24892b6824a954199a45e9ffcc1c70f0"
@@ -1773,6 +1818,11 @@ git-tree-sha1 = "ca0969166a028236229f63514992fc073799bb78"
 uuid = "41fe7b60-77ed-43a1-b4f0-825fd5a5650d"
 version = "0.2.0"
 
+[[deps.VersionParsing]]
+git-tree-sha1 = "58d6e80b4ee071f5efd07fda82cb9fbe17200868"
+uuid = "81def892-9a0e-5fdd-b105-ffc91e053289"
+version = "1.3.0"
+
 [[deps.Vulkan_Loader_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Wayland_jll", "Xorg_libX11_jll", "Xorg_libXrandr_jll", "xkbcommon_jll"]
 git-tree-sha1 = "2f0486047a07670caad3a81a075d2e518acc5c59"
@@ -1816,9 +1866,9 @@ version = "1.6.1"
 
 [[deps.XML2_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Zlib_jll"]
-git-tree-sha1 = "04a51d15436a572301b5abbb9d099713327e9fc4"
+git-tree-sha1 = "24b81b59bd35b3c42ab84fa589086e19be919916"
 uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
-version = "2.10.4+0"
+version = "2.11.5+0"
 
 [[deps.XSLT_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl", "Libgcrypt_jll", "Libgpg_error_jll", "Libiconv_jll", "Pkg", "XML2_jll", "Zlib_jll"]
@@ -2091,22 +2141,29 @@ version = "1.4.1+1"
 # ╟─07f1d3e0-0fd3-49e1-b63f-715f95b69e64
 # ╠═acdb3423-cecc-4bad-bc96-ad59a4ff8541
 # ╠═cf3a19b3-b1b8-4a6c-b8f7-5080d0f21767
-# ╠═5617ea73-195b-4048-92e0-d82206427ebc
 # ╟─da09df83-a3c0-4bc9-bf1a-ab622a9990cc
 # ╠═4a204d99-c49d-49ce-91e6-926a28cd797e
 # ╠═963b0abd-cd8d-43cf-a6f3-f853e2064035
-# ╠═0c57064d-f127-44fd-af4d-125d3a471938
 # ╟─22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
 # ╠═ff21eeac-0e7e-418a-a5ad-d8be43577ad7
 # ╟─942dfc36-4626-433b-9762-cfffa8fc551e
-# ╠═6a69c39e-bbf3-483c-9807-d5fde61fa154
+# ╠═6dd46c91-019e-4604-8f74-20d1aaa55dc0
 # ╟─57b8e1f2-372d-409b-9702-4d41a9abc294
 # ╠═ce7c715c-ecd3-4ae4-a943-e8894fdc7cda
 # ╟─572c583c-17e8-42d7-a3f7-55490e8209e5
 # ╠═9c5b8a04-dc7b-443e-87cf-f28b41112649
 # ╟─00791b32-42fb-48dc-97e8-3a92efd65e3a
 # ╠═ccf92271-50d9-408f-b6a8-fcb18d5c3426
+# ╟─c1aff38f-06ab-4d1a-97ff-72625ff2b517
+# ╟─019c44ec-d009-469b-ab6e-a83521e4494c
+# ╟─ca15a542-3525-4510-ad21-209022125a84
+# ╟─76f3e40e-1658-4ced-a034-5b70f7fd724b
+# ╟─cec0e8c6-2995-4263-859c-71d32929d362
+# ╟─737bac45-a129-4a6d-8bd4-b51ace2ae8ef
+# ╟─e41f14a2-e040-4602-b160-70138dc2e1d8
+# ╟─b5d7e27d-be5d-45ab-a198-fbeda1c3c456
 # ╟─26f6f0f3-b6a9-4b4f-9a10-1bafab4f5daa
+# ╟─10b21a93-d32c-4b4b-9f3c-82350a5cd2f1
 # ╟─15b5acb6-51c4-4610-8ff1-574ef49b2505
 # ╟─643e386a-a3b0-4e6c-ab62-a7dabf1d340d
 # ╟─5c6720ce-ac47-4925-b65a-45caeacfd75b
@@ -2121,10 +2178,10 @@ version = "1.4.1+1"
 # ╟─2a8c8981-08e5-4b0f-a676-eb352b29f298
 # ╠═f6ba0db0-6853-444d-8482-5a2911b6c565
 # ╟─581eb4e9-62f1-4719-8b7f-e368fdadbef6
-# ╠═7ffb8e5b-4007-43c8-9be0-330f6a39f73b
+# ╟─d20953b5-36c0-42d1-8e9a-826255c6ae11
+# ╟─7ffb8e5b-4007-43c8-9be0-330f6a39f73b
 # ╟─4fea79dd-cdf3-4e35-90c7-d99c174f865c
-# ╠═f244c22c-60e1-4c62-bc56-fd64ca6e57c4
-# ╠═c3768305-5465-4a5a-ace4-7cc4028455de
+# ╠═ba23fde6-6b4a-4650-b218-a0069ab25093
 # ╟─699e8e3c-f976-4786-bc6e-322eef9cdb53
 # ╠═46a1a4ca-aedc-4720-b6e8-784cd6f3aa7a
 # ╟─00000000-0000-0000-0000-000000000001

@@ -519,20 +519,6 @@ begin
 	p1
 end
 
-# ╔═╡ f4a5baaf-2adb-45aa-ae2c-95c5a42e7912
-# ╠═╡ disabled = true
-#=╠═╡
-begin
-	CSV.write("/home/farzane/julia-1.8.1/bin/assign2/imp_scrubbed_DS2.csv", imp_QC_DS2n)
-	CSV.write("/home/farzane/julia-1.8.1/bin/assign2/imp_DS2.csv", imp_DS2n)
-	CSV.write("/home/farzane/julia-1.8.1/bin/assign2/imp_fDS2.csv", imp_QC_flDS2n)
-	CSV.write("/home/farzane/julia-1.8.1/bin/assign2/bin_DS2.csv", std_imp_QC_flDS2nb)
-	CSV.write("/home/farzane/julia-1.8.1/bin/assign2/sc_DS2.csv", std_imp_QC_flDS2n)
-	CSV.write("/home/farzane/julia-1.8.1/bin/assign2/bin_DS2_test.csv", std_imp_QC_flDC2nb)
-	CSV.write("/home/farzane/julia-1.8.1/bin/assign2/sc_DS2_test.csv", std_imp_QC_flDC2n)
-end
-  ╠═╡ =#
-
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]

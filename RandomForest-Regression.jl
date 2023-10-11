@@ -17,17 +17,6 @@ end
 # ╔═╡ acdb3423-cecc-4bad-bc96-ad59a4ff8541
 using MLJ, Random, Plots, MLJLinearModels, MLJDecisionTreeInterface, CSV, DataFrames, PlutoUI, HypertextLiteral, StatsPlots
 
-# ╔═╡ 4a204d99-c49d-49ce-91e6-926a28cd797e
-begin
-	using HTTP
-	github_tr_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2.csv"
-	github_te_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2_test.csv"
-	response_tr = HTTP.get(github_tr_url)
-	response_te = HTTP.get(github_te_url)
-	train_data = (CSV.File(IOBuffer(response_tr.body))) |> DataFrame
-	test_data = (CSV.File(IOBuffer(response_te.body))) |> DataFrame
-end
-
 # ╔═╡ 07f1d3e0-0fd3-49e1-b63f-715f95b69e64
 md"""
 ## Modelling - Random Forest Regression model
@@ -47,7 +36,22 @@ md"""
 The imputed datafile is read and then split into training data and labels.
 """
 
+# ╔═╡ 4a204d99-c49d-49ce-91e6-926a28cd797e
+# ╠═╡ disabled = true
+#=╠═╡
+begin
+	using HTTP
+	github_tr_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2.csv"
+	github_te_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2_test.csv"
+	response_tr = HTTP.get(github_tr_url)
+	response_te = HTTP.get(github_te_url)
+	train_data = (CSV.File(IOBuffer(response_tr.body))) |> DataFrame
+	test_data = (CSV.File(IOBuffer(response_te.body))) |> DataFrame
+end
+  ╠═╡ =#
+
 # ╔═╡ 963b0abd-cd8d-43cf-a6f3-f853e2064035
+#=╠═╡
 begin
 	coerce!(train_data, :num => OrderedFactor{2});
 	coerce!(test_data, :num => OrderedFactor{2});
@@ -58,19 +62,16 @@ begin
 	yc = coerce(y, autotype(y, :discrete_to_continuous));
 	ytc = coerce(yt, autotype(yt, :discrete_to_continuous));
 end
+  ╠═╡ =#
 
 # ╔═╡ 0c57064d-f127-44fd-af4d-125d3a471938
-# ╠═╡ disabled = true
-#=╠═╡
 begin
 	df = CSV.read("imp_fDS2.csv", DataFrame)
+	train, test = partition(df, 0.7, shuffle=true)
 
-	y = df[:, end]
-	X = df[:, 1:end - 1]
-
-	size(df)
+	y = train[:, end]
+	X = train[:, 1:end - 1]
 end
-  ╠═╡ =#
 
 # ╔═╡ 22c50ee0-98b7-4f64-80e1-6a1a5c4b558b
 md"""
@@ -83,7 +84,7 @@ begin
 	Random.seed!(1)
 	tree_reg = DecisionTreeRegressor()
 	forest = EnsembleModel(model=tree_reg, n=100)
-	mach = machine(forest, Xc, yc, scitype_check_level=0)
+	mach = machine(forest, X, y, scitype_check_level=0)
 	perf = evaluate!(mach, measure=rms, resampling=CV(nfolds=10))
 	perf
 end
@@ -108,15 +109,15 @@ begin
 	Random.seed!(1)
 	r1 = range(forest, :(model.n_subfeatures), lower=3, upper=8)
 	r2 = range(forest, :bagging_fraction, lower=0.4, upper=1.0)
-	r3 = range(forest, :(model.max_depth), lower=2, upper=250)
+	r3 = range(forest, :(model.max_depth), lower=2, upper=500)
 	r4 = range(forest, :(model.min_samples_leaf), lower=2, upper=8)
 	r5 = range(forest, :(model.min_samples_split), lower=2, upper=5)
 	r6 = range(forest, :(model.min_purity_increase), lower=0.0, upper=0.5)
 	r7 = range(forest, :n, lower=20, upper=500)
-	tm = TunedModel(model=forest, tuning=Grid(goal=10),
+	tm = TunedModel(model=forest, tuning=Grid(goal=15),
 	                resampling=CV(nfolds=10), ranges=[r1, r3, r7],
 	                measure=rms)
-	m = machine(tm, X, y)
+	m = machine(tm, X, y, scitype_check_level=0)
 	MLJ.fit!(m);
 end
 
@@ -139,10 +140,6 @@ Printing the configuration of the best performing model
 # ╔═╡ ccf92271-50d9-408f-b6a8-fcb18d5c3426
 # Best model
 rep.best_history_entry
-
-# ╔═╡ 49a945c0-b62c-4fec-9443-8edcdd46ee0e
-# Eval
-tuned_perf = evaluate!(m, measure=rms, resampling=CV(nfolds=10), verbosity=0)
 
 # ╔═╡ 26f6f0f3-b6a9-4b4f-9a10-1bafab4f5daa
 md"""
@@ -226,20 +223,18 @@ md"""
 
 # ╔═╡ 7ffb8e5b-4007-43c8-9be0-330f6a39f73b
 begin
-	violin(["RMS Comparision"], tuned_perf.per_fold, side=:left,  label="Tuned model")
+	violin(["RMS Comparision"], rep.history[1].per_fold, side=:left,  label="Tuned model")
 	violin!(["RMS Comparision"], custom_perf.per_fold, side=:right, label="Custom model")
 end
 
 # ╔═╡ 4fea79dd-cdf3-4e35-90c7-d99c174f865c
 md""" 
 #### Testing on the test set
-Testing the model on the test dataset, to see if it generalises well. 
+Testing the model on the test dataset, to see if it generalises well on data that the model has never seen berfore. 
 """
 
 # ╔═╡ f244c22c-60e1-4c62-bc56-fd64ca6e57c4
-function eval_on_dataset(file, tunedmodel)
-	df_fun = CSV.read(file, DataFrame)
-
+function eval_on_dataset(df_fun, tunedmodel)
 	y_fun = df_fun[:, end]
 	X_fun = df_fun[:, 1:end - 1]
 
@@ -249,35 +244,27 @@ function eval_on_dataset(file, tunedmodel)
 end
 
 # ╔═╡ c3768305-5465-4a5a-ace4-7cc4028455de
-# ╠═╡ disabled = true
-#=╠═╡
-eval_on_dataset("processed.hungarian.data", tm)
-  ╠═╡ =#
-
-# ╔═╡ a9175192-c69d-4b2a-98b0-01df90e5c192
-# ╠═╡ disabled = true
-#=╠═╡
-eval_on_dataset("processed.switzerland.data", tm)
-  ╠═╡ =#
-
-# ╔═╡ 18d8745e-4cea-46e2-bf39-6d3730d961f4
-# ╠═╡ disabled = true
-#=╠═╡
-eval_on_dataset("processed.cleveland.data", tm)
-  ╠═╡ =#
+test_data = eval_on_dataset(test, tm)
 
 # ╔═╡ 699e8e3c-f976-4786-bc6e-322eef9cdb53
 md"""
 #### Evaluation of results
-On most of the datasets the model performs pretty much as well as on the training set. But on the switzerland dataset it performs even better. 
+By running the model on the test dataset we can see it performs almost as well as on the training dataset. This makes sense as the two sets are very similair.
 """
+
+# ╔═╡ 46a1a4ca-aedc-4720-b6e8-784cd6f3aa7a
+begin
+	plot(1:10, test_data.per_fold, label="Test RMS per fold")
+	plot!(1:10, rep.history[1].per_fold, label="Training RMS per fold")
+	xlabel!("Fold #")
+	ylabel!("RMS")
+end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
-HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
 HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJDecisionTreeInterface = "c6f25543-311c-4c74-83dc-3ea6d1015661"
@@ -290,7 +277,6 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 [compat]
 CSV = "~0.10.11"
 DataFrames = "~1.6.1"
-HTTP = "~1.10.0"
 HypertextLiteral = "~0.9.4"
 MLJ = "~0.19.5"
 MLJDecisionTreeInterface = "~0.4.0"
@@ -306,7 +292,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.3"
 manifest_format = "2.0"
-project_hash = "01c8e2460a72416dec2d2001937c1f405a495aac"
+project_hash = "a98ad7e57bc2107b95d1bd94a3e9174240539969"
 
 [[deps.ARFFFiles]]
 deps = ["CategoricalArrays", "Dates", "Parsers", "Tables"]
@@ -2120,7 +2106,6 @@ version = "1.4.1+1"
 # ╠═9c5b8a04-dc7b-443e-87cf-f28b41112649
 # ╟─00791b32-42fb-48dc-97e8-3a92efd65e3a
 # ╠═ccf92271-50d9-408f-b6a8-fcb18d5c3426
-# ╠═49a945c0-b62c-4fec-9443-8edcdd46ee0e
 # ╟─26f6f0f3-b6a9-4b4f-9a10-1bafab4f5daa
 # ╟─15b5acb6-51c4-4610-8ff1-574ef49b2505
 # ╟─643e386a-a3b0-4e6c-ab62-a7dabf1d340d
@@ -2136,12 +2121,11 @@ version = "1.4.1+1"
 # ╟─2a8c8981-08e5-4b0f-a676-eb352b29f298
 # ╠═f6ba0db0-6853-444d-8482-5a2911b6c565
 # ╟─581eb4e9-62f1-4719-8b7f-e368fdadbef6
-# ╟─7ffb8e5b-4007-43c8-9be0-330f6a39f73b
+# ╠═7ffb8e5b-4007-43c8-9be0-330f6a39f73b
 # ╟─4fea79dd-cdf3-4e35-90c7-d99c174f865c
 # ╠═f244c22c-60e1-4c62-bc56-fd64ca6e57c4
 # ╠═c3768305-5465-4a5a-ace4-7cc4028455de
-# ╠═a9175192-c69d-4b2a-98b0-01df90e5c192
-# ╠═18d8745e-4cea-46e2-bf39-6d3730d961f4
 # ╟─699e8e3c-f976-4786-bc6e-322eef9cdb53
+# ╠═46a1a4ca-aedc-4720-b6e8-784cd6f3aa7a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

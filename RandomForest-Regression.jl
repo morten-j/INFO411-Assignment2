@@ -277,7 +277,7 @@ By running the model on the test dataset we can see it performs a bit worse on t
 begin
 	import Plots
 	Plots.plot(1:10, test_perf.per_fold, label="Test RMS per fold")
-	Plots.plot!(1:10, rep.history[1].per_fold, label="Training RMS per fold")
+	Plots.plot!(1:10, rep.history[1].per_fold, label="Training RMS per fold", legend=:bottomright)
 	Plots.xlabel!("Fold #")
 	Plots.ylabel!("RMS")
 end

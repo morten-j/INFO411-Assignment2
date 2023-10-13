@@ -4,8 +4,18 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
+        el
+    end
+end
+
 # ╔═╡ 1f0032c0-60d9-11ee-1d60-47a6be9f6ee9
-using MLJ, Random, Printf, DataFrames, Printf, Plots, MLJLinearModels, CSV, Statistics, LinearRegressionKit, StatsModels, StatsPlots, HypothesisTests
+using MLJ, Random, Printf, DataFrames, Printf, Plots, MLJLinearModels, CSV, Statistics, LinearRegressionKit, StatsModels, StatsPlots, HypothesisTests, PlutoUI, HypertextLiteral
 
 # ╔═╡ 45e3aa0d-4706-4b22-b08e-c430eba60bb8
 begin
@@ -263,17 +273,40 @@ mean_list2 = Float64[]
 	println("All the mean rms scores from folds 2-20 are \n$(mean_list2)")
 end
 
+# ╔═╡ 73e6ec50-5a1b-4f23-bce1-2605b173259d
+md"""
+# Dashboard
+"""
+
+# ╔═╡ d9d49bd7-684b-4906-b462-3cdc381d258b
+begin
+	#@info PlutoRunner.currently_running_cell_id
+	slider = @bind β Slider(1.0:1.0:2; show_value=true);
+end
+
+# ╔═╡ e168f1bf-c90c-4512-a06f-36a8a12addc6
+begin
+	#@info PlutoRunner.currently_running_cell_id
+	if β == 1.0
+		plot(names(Xtr), abs.(coef) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients For Ridge Regression")
+	else
+		plot(names(Xtr), abs.(coef2) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients of Multivariate Regression")
+	end
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
 DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
+HypertextLiteral = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
 HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 LinearRegressionKit = "e91d531d-6e51-44a8-96b7-a10d5d51daa3"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJLinearModels = "6ee0df7b-362f-4a72-a706-9e79364fb692"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -284,11 +317,13 @@ StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
 CSV = "~0.10.11"
 DataFrames = "~1.6.1"
 HTTP = "~1.10.0"
+HypertextLiteral = "~0.9.4"
 HypothesisTests = "~0.10.13"
 LinearRegressionKit = "~0.7.11"
 MLJ = "~0.19.5"
 MLJLinearModels = "~0.9.2"
 Plots = "~1.39.0"
+PlutoUI = "~0.7.52"
 StatsModels = "~0.7.3"
 StatsPlots = "~0.15.6"
 """
@@ -299,7 +334,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.2"
 manifest_format = "2.0"
-project_hash = "7ccb74d2c7175a9ec7b0796c1865461252f203a1"
+project_hash = "49d5528db37a22ccd697e6c6e356cc353add8c65"
 
 [[deps.ARFFFiles]]
 deps = ["CategoricalArrays", "Dates", "Parsers", "Tables"]
@@ -317,6 +352,12 @@ weakdeps = ["ChainRulesCore", "Test"]
     [deps.AbstractFFTs.extensions]
     AbstractFFTsChainRulesCoreExt = "ChainRulesCore"
     AbstractFFTsTestExt = "Test"
+
+[[deps.AbstractPlutoDingetjes]]
+deps = ["Pkg"]
+git-tree-sha1 = "91bd53c39b9cbfb5ef4b015e8b582d344532bd0a"
+uuid = "6e696c72-6542-2067-7265-42206c756150"
+version = "1.2.0"
 
 [[deps.Adapt]]
 deps = ["LinearAlgebra", "Requires"]
@@ -849,11 +890,29 @@ git-tree-sha1 = "f218fe3736ddf977e0e772bc9a586b2383da2685"
 uuid = "34004b35-14d8-5ef3-9330-4cdb6864b03a"
 version = "0.3.23"
 
+[[deps.Hyperscript]]
+deps = ["Test"]
+git-tree-sha1 = "8d511d5b81240fc8e6802386302675bdf47737b9"
+uuid = "47d2ed2b-36de-50cf-bf87-49c2cf4b8b91"
+version = "0.0.4"
+
+[[deps.HypertextLiteral]]
+deps = ["Tricks"]
+git-tree-sha1 = "c47c5fa4c5308f27ccaac35504858d8914e102f9"
+uuid = "ac1192a8-f4b3-4bfe-ba22-af5b92cd3ab2"
+version = "0.9.4"
+
 [[deps.HypothesisTests]]
 deps = ["Combinatorics", "Distributions", "LinearAlgebra", "Random", "Rmath", "Roots", "Statistics", "StatsBase"]
 git-tree-sha1 = "fee0691e3336a71503dada09ed61bed786b0f59f"
 uuid = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 version = "0.10.13"
+
+[[deps.IOCapture]]
+deps = ["Logging", "Random"]
+git-tree-sha1 = "d75853a0bdbfb1ac815478bacd89cd27b550ace6"
+uuid = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
+version = "0.2.3"
 
 [[deps.InlineStrings]]
 deps = ["Parsers"]
@@ -1131,6 +1190,11 @@ weakdeps = ["CategoricalArrays"]
 
     [deps.LossFunctions.extensions]
     LossFunctionsCategoricalArraysExt = "CategoricalArrays"
+
+[[deps.MIMEs]]
+git-tree-sha1 = "65f28ad4b594aebe22157d6fac869786a255b7eb"
+uuid = "6c6e2e6c-3030-632d-7369-2d6c69616d65"
+version = "0.1.4"
 
 [[deps.MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
@@ -1415,6 +1479,12 @@ version = "1.39.0"
     IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
     ImageInTerminal = "d8c32880-2388-543b-8c61-d9f865259254"
     Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
+
+[[deps.PlutoUI]]
+deps = ["AbstractPlutoDingetjes", "Base64", "ColorTypes", "Dates", "FixedPointNumbers", "Hyperscript", "HypertextLiteral", "IOCapture", "InteractiveUtils", "JSON", "Logging", "MIMEs", "Markdown", "Random", "Reexport", "URIs", "UUIDs"]
+git-tree-sha1 = "e47cd150dbe0443c3a3651bc5b9cbd5576ab75b7"
+uuid = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+version = "0.7.52"
 
 [[deps.PooledArrays]]
 deps = ["DataAPI", "Future"]
@@ -1772,6 +1842,11 @@ deps = ["Random", "Test"]
 git-tree-sha1 = "9a6ae7ed916312b41236fcef7e0af564ef934769"
 uuid = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 version = "0.9.13"
+
+[[deps.Tricks]]
+git-tree-sha1 = "aadb748be58b492045b4f56166b5188aa63ce549"
+uuid = "410a4b4d-49e4-4fbc-ab6d-cb71b17b3775"
+version = "0.1.7"
 
 [[deps.URIParser]]
 deps = ["Unicode"]
@@ -2190,5 +2265,8 @@ version = "1.4.1+1"
 # ╠═11d1e222-515d-48de-8770-42aa5f8117d3
 # ╟─34d56a31-4903-4f57-82c7-d4d8c2d1148a
 # ╠═4e23c80a-3c6d-4b40-b4ed-81c0c06d0fe4
+# ╟─73e6ec50-5a1b-4f23-bce1-2605b173259d
+# ╠═d9d49bd7-684b-4906-b462-3cdc381d258b
+# ╠═e168f1bf-c90c-4512-a06f-36a8a12addc6
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

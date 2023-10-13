@@ -75,8 +75,7 @@ end
 
 # ╔═╡ 2682412c-5df6-49d7-bb2b-7460697593ad
 md"""
-### Cross Validation, 10 folds
-- obtain mean and standard deviation
+### Cross Validation, 10 folds, Multivariate Regression
 """
 
 # ╔═╡ 09b36204-eabe-44f8-8589-3b94c9303fec
@@ -142,6 +141,11 @@ names(Xtr)
 # ╔═╡ 94b3db89-42b0-4c46-abee-d2694bb49990
 plot(names(Xtr), abs.(coef) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients For Ridge Regression")
 
+# ╔═╡ 2849cef5-95c5-4014-b776-10c276c44760
+md"""
+### Cross Validation, 10 folds Ridge Regression
+"""
+
 # ╔═╡ d204135c-7790-49c7-a6eb-d3a267f323d9
 begin
 	rms_scores2 = Float64[]
@@ -162,21 +166,29 @@ md"""
 
 # ╔═╡ 609ac575-e08d-4037-9a6a-40d83995742b
 begin
-	mean(rms_scores2)
-	std(rms_scores2)
-	println("The mean of scores is $(mean_perf)")
-	println("The standard deviation is $(std1)")
+	mean_perf2 = mean(rms_scores2)
+	std2 = std(rms_scores2)
+	println("The mean of scores is $(mean_perf2)")
+	println("The standard deviation is $(std2)")
 end
 
 # ╔═╡ 3034d87e-3384-445f-9ff9-9c03f5a83a68
 md"""
-## RMS on Test data using Ridge Regression
+## RMS on Train and Test data using Ridge Regression
 """
+
+# ╔═╡ 75f85d18-4646-4ec7-ab41-c7da7cd411c9
+begin
+	predb4 = predict(mach_ri, Xtr)
+	res4 = round(rms(predb4, ytr), sigdigits=4)
+	println("RMS score on train data $(res4)")
+end
 
 # ╔═╡ b91083d2-e3c7-4ada-9dd1-53412a57c1a4
 begin
 	predb3 = predict(mach_ri, Xte)
 	res3 = round(rms(predb3, yte), sigdigits=4)
+	println("RMS score on test data $(res3)")
 end
 
 # ╔═╡ 0274ec13-bbab-4d15-8910-98ef0ad643c9
@@ -205,7 +217,7 @@ Multivariate Regression and Ridge rms
 
 # ╔═╡ 9c996d28-f057-44c7-bbd6-79e1f91663ef
 md"""
-### Cross Validation 2:20
+### Cross Validation 2:20 using Multivariate Regression
 """
 
 # ╔═╡ 11d1e222-515d-48de-8770-42aa5f8117d3
@@ -226,6 +238,11 @@ mean_list = Float64[]
 	println("The fold with the lowest average rms is $(min_index + 1)\nThe mean is $(min_value)\n")
 	println("All the mean rms scores from folds 2-20 are \n$(mean_list)")
 end
+
+# ╔═╡ 34d56a31-4903-4f57-82c7-d4d8c2d1148a
+md"""
+### Cross Validation 2:20 using Ridge Regression
+"""
 
 # ╔═╡ 4e23c80a-3c6d-4b40-b4ed-81c0c06d0fe4
 begin
@@ -2157,18 +2174,21 @@ version = "1.4.1+1"
 # ╠═ea6f6c48-8405-452e-8c23-cf3e9431842f
 # ╠═71dbe0d4-905f-48a1-ba0d-fd6083626c29
 # ╠═94b3db89-42b0-4c46-abee-d2694bb49990
+# ╟─2849cef5-95c5-4014-b776-10c276c44760
 # ╠═d204135c-7790-49c7-a6eb-d3a267f323d9
 # ╠═11840af4-cb33-4489-8a1d-bf46088d36f1
 # ╠═609ac575-e08d-4037-9a6a-40d83995742b
-# ╟─3034d87e-3384-445f-9ff9-9c03f5a83a68
+# ╠═3034d87e-3384-445f-9ff9-9c03f5a83a68
+# ╠═75f85d18-4646-4ec7-ab41-c7da7cd411c9
 # ╠═b91083d2-e3c7-4ada-9dd1-53412a57c1a4
 # ╠═0274ec13-bbab-4d15-8910-98ef0ad643c9
 # ╠═96974e3e-b874-4b6a-9f28-679e82b243f4
 # ╠═588d63ab-f64a-4bd2-a845-7f933e91d7f7
 # ╠═ad9e731c-285a-42a1-b3e6-f36d19b9f52e
 # ╠═1b2633c7-be84-4e70-9676-06cf059ab56c
-# ╠═9c996d28-f057-44c7-bbd6-79e1f91663ef
+# ╟─9c996d28-f057-44c7-bbd6-79e1f91663ef
 # ╠═11d1e222-515d-48de-8770-42aa5f8117d3
+# ╟─34d56a31-4903-4f57-82c7-d4d8c2d1148a
 # ╠═4e23c80a-3c6d-4b40-b4ed-81c0c06d0fe4
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

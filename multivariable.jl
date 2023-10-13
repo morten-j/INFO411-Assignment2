@@ -30,19 +30,9 @@ end
 # Load 
 LinearRegressor = @load LinearRegressor pkg=MLJLinearModels
 
-# ╔═╡ db7d8314-4885-43e9-9187-b07a78e43bb4
+# ╔═╡ cc91dda0-ab62-4783-841b-7e9e1898eac7
 md"""
-- yb is target variable
-- Xb explanatory variables
-"""
-
-# ╔═╡ 606bb8f5-680e-402b-97e2-8bc7d4486b3d
-md"""
-- Split data. 80% for training and 20% for testing
-- Create Linear Regression Model object
-- Create model instance for training. input variables and target variable
-- Train model
-- Retrieve coefficients of features
+## Coeffients of model
 """
 
 # ╔═╡ 9df13e43-c178-4078-9d3c-e1a56bf20c7c
@@ -50,38 +40,38 @@ begin
 	reg_lr = LinearRegressor()
 	machb = machine(reg_lr, Xtr, ytr)
 	fit!(machb)
-	
+	coef2 = Float64[]
 	fpb = fitted_params(machb)
 	coefsb = fpb.coefs
 	interceptb = fpb.intercept
 	for (name, val) in coefsb
 	    println("$(rpad(name, 8)):  $(round(val, sigdigits=3))")
+		push!(coef2, val)
 	end
 	println("Intercept: $(round(interceptb, sigdigits=3))")
 end
 
+# ╔═╡ 51f7a762-d536-4b96-b1aa-7927e48a2f79
+plot(names(Xtr), abs.(coef2) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients of Multivariate Regression")
+
 # ╔═╡ 8b8699cc-69f3-40ad-94cf-1a8ae2a41797
 md"""
-- Generate prediction using trained model 
-- Obtain Root Mean Square error
+## Root Mean Square Error on Train and Test Data For Multivariate Regression
 """
 
 # ╔═╡ d0b158d6-e784-45a1-b479-a17c7072986b
 begin
 	predb = predict(machb, Xtr)
 	res1 = round(rms(predb, ytr), sigdigits=4)
+	println("RMS score on train data $(res1)")
 end
 
-# ╔═╡ 20496760-56e2-498c-8339-b5e88b29921e
-println("RMS score using 80% training and 20% test is $(res1)")
-
-# ╔═╡ d497bf4b-b6ef-41ff-b3d2-8e4b74c903e9
-md"""
-### Tuning the model
-- try cross validation
-- try Ridge regression
-- try different metrics
-"""
+# ╔═╡ eadffd3b-2c01-4742-8a3f-dda36baa901b
+begin
+	predb2 = predict(machb, Xte)
+	res2 = round(rms(predb2, yte), sigdigits=4)
+	println("RMS score on test data $(res2)")
+end
 
 # ╔═╡ 2682412c-5df6-49d7-bb2b-7460697593ad
 md"""
@@ -103,18 +93,25 @@ end
 
 # ╔═╡ 2e5c93e0-566e-4390-bf83-85a76480afa1
 md"""
-## Mean and SD 
+## Mean and SD using cross validation (10 Folds) using Multivariate Regression
 """
 
 # ╔═╡ f4f938e1-2adc-418d-8839-9c84bfb7920d
-mean_perf = mean(rms_scores1)
-
-# ╔═╡ 720b2681-cf50-4db5-87da-47e78e89f801
-std(rms_scores1)
+begin
+	mean_perf = mean(rms_scores1)
+	std1 = std(rms_scores1)
+	println("The mean of scores is $(mean_perf)")
+	println("The standard deviation is $(std1)")
+end
 
 # ╔═╡ c0974407-f8ae-4a86-92c5-8870520cde1a
 md"""
 ## Ridge Regressor
+"""
+
+# ╔═╡ 7f09bb51-900d-46c5-a8b7-2a48903c141c
+md"""
+### Coefficients using Ridge Regession
 """
 
 # ╔═╡ 1946bc14-8e90-425b-bfaf-87ae8e049fb3
@@ -143,7 +140,7 @@ end
 names(Xtr)
 
 # ╔═╡ 94b3db89-42b0-4c46-abee-d2694bb49990
-plot(names(Xtr), abs.(coef) , label="Line Plot", xlabel="X-axis", ylabel="Y-axis", title="Simple Line Plot")
+plot(names(Xtr), abs.(coef) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients For Ridge Regression")
 
 # ╔═╡ d204135c-7790-49c7-a6eb-d3a267f323d9
 begin
@@ -163,11 +160,24 @@ md"""
 ### Mean and Standard Deviation using Ridge Regression
 """
 
-# ╔═╡ 8755f623-0700-436f-ac34-fef66eda512f
-mean(rms_scores2)
+# ╔═╡ 609ac575-e08d-4037-9a6a-40d83995742b
+begin
+	mean(rms_scores2)
+	std(rms_scores2)
+	println("The mean of scores is $(mean_perf)")
+	println("The standard deviation is $(std1)")
+end
 
-# ╔═╡ d99ed0a7-fefc-4b2d-ab15-ec0651682f70
-std(rms_scores2)
+# ╔═╡ 3034d87e-3384-445f-9ff9-9c03f5a83a68
+md"""
+## RMS on Test data using Ridge Regression
+"""
+
+# ╔═╡ b91083d2-e3c7-4ada-9dd1-53412a57c1a4
+begin
+	predb3 = predict(mach_ri, Xte)
+	res3 = round(rms(predb3, yte), sigdigits=4)
+end
 
 # ╔═╡ 0274ec13-bbab-4d15-8910-98ef0ad643c9
 md"""
@@ -180,6 +190,11 @@ begin
 	violin!(["Score comparison"],rms_scores2 , side=:right, label="t2")
 end
 
+# ╔═╡ 588d63ab-f64a-4bd2-a845-7f933e91d7f7
+md"""
+## Statistical Test
+"""
+
 # ╔═╡ ad9e731c-285a-42a1-b3e6-f36d19b9f52e
 UnequalVarianceTTest(rms_scores1, rms_scores2)
 
@@ -187,18 +202,6 @@ UnequalVarianceTTest(rms_scores1, rms_scores2)
 md"""
 Multivariate Regression and Ridge rms
 """
-
-# ╔═╡ f606b123-7607-49c9-9966-207be2df6f4c
-begin
-	predb2 = predict(machb, Xte)
-	res2 = round(rms(predb2, yte), sigdigits=4)
-end
-
-# ╔═╡ eb9db4c4-4536-41ff-b8fb-083f5f96731c
-begin
-	predb3 = predict(mach_ri, Xte)
-	res3 = round(rms(predb3, yte), sigdigits=4)
-end
 
 # ╔═╡ 9c996d28-f057-44c7-bbd6-79e1f91663ef
 md"""
@@ -217,17 +220,12 @@ mean_list = Float64[]
 		end
 		push!(mean_list, mean(fold_list[1][i]))
 	end
-end
-
-# ╔═╡ ae4c6097-7ec0-40c3-8a0b-a424c70ebc97
-begin
 	# min of cross validation
 	min_value = minimum(mean_list)
 	min_index = argmin(mean_list)
+	println("The fold with the lowest average rms is $(min_index + 1)\nThe mean is $(min_value)\n")
+	println("All the mean rms scores from folds 2-20 are \n$(mean_list)")
 end
-
-# ╔═╡ 4136fddb-ba5b-48ad-9246-d31ec184ee9b
-println(mean_list[min_index])
 
 # ╔═╡ 4e23c80a-3c6d-4b40-b4ed-81c0c06d0fe4
 begin
@@ -244,8 +242,8 @@ mean_list2 = Float64[]
 	# min of cross validation
 	min_value2 = minimum(mean_list2)
 	min_index2 = argmin(mean_list2)
-	println(min_index2)
-	println(mean_list2[min_index2])
+	println("The fold with the lowest average rms is $(min_index2 + 1)\nThe mean is $(min_value2)\n")
+	println("All the mean rms scores from folds 2-20 are \n$(mean_list2)")
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2141,39 +2139,36 @@ version = "1.4.1+1"
 # ╔═╡ Cell order:
 # ╠═1f0032c0-60d9-11ee-1d60-47a6be9f6ee9
 # ╠═45e3aa0d-4706-4b22-b08e-c430eba60bb8
-# ╠═0ac22c2e-258d-438f-b3e5-be5f6741cdd9
+# ╟─0ac22c2e-258d-438f-b3e5-be5f6741cdd9
 # ╠═0984d1ea-dd90-4753-bd81-43ad0d5c9b3f
-# ╟─db7d8314-4885-43e9-9187-b07a78e43bb4
-# ╠═606bb8f5-680e-402b-97e2-8bc7d4486b3d
+# ╟─cc91dda0-ab62-4783-841b-7e9e1898eac7
 # ╠═9df13e43-c178-4078-9d3c-e1a56bf20c7c
+# ╠═51f7a762-d536-4b96-b1aa-7927e48a2f79
 # ╟─8b8699cc-69f3-40ad-94cf-1a8ae2a41797
 # ╠═d0b158d6-e784-45a1-b479-a17c7072986b
-# ╠═20496760-56e2-498c-8339-b5e88b29921e
-# ╠═d497bf4b-b6ef-41ff-b3d2-8e4b74c903e9
+# ╠═eadffd3b-2c01-4742-8a3f-dda36baa901b
 # ╠═2682412c-5df6-49d7-bb2b-7460697593ad
 # ╠═09b36204-eabe-44f8-8589-3b94c9303fec
-# ╟─2e5c93e0-566e-4390-bf83-85a76480afa1
+# ╠═2e5c93e0-566e-4390-bf83-85a76480afa1
 # ╠═f4f938e1-2adc-418d-8839-9c84bfb7920d
-# ╠═720b2681-cf50-4db5-87da-47e78e89f801
 # ╟─c0974407-f8ae-4a86-92c5-8870520cde1a
+# ╟─7f09bb51-900d-46c5-a8b7-2a48903c141c
 # ╠═1946bc14-8e90-425b-bfaf-87ae8e049fb3
 # ╠═ea6f6c48-8405-452e-8c23-cf3e9431842f
 # ╠═71dbe0d4-905f-48a1-ba0d-fd6083626c29
 # ╠═94b3db89-42b0-4c46-abee-d2694bb49990
 # ╠═d204135c-7790-49c7-a6eb-d3a267f323d9
 # ╠═11840af4-cb33-4489-8a1d-bf46088d36f1
-# ╠═8755f623-0700-436f-ac34-fef66eda512f
-# ╠═d99ed0a7-fefc-4b2d-ab15-ec0651682f70
+# ╠═609ac575-e08d-4037-9a6a-40d83995742b
+# ╟─3034d87e-3384-445f-9ff9-9c03f5a83a68
+# ╠═b91083d2-e3c7-4ada-9dd1-53412a57c1a4
 # ╠═0274ec13-bbab-4d15-8910-98ef0ad643c9
 # ╠═96974e3e-b874-4b6a-9f28-679e82b243f4
+# ╠═588d63ab-f64a-4bd2-a845-7f933e91d7f7
 # ╠═ad9e731c-285a-42a1-b3e6-f36d19b9f52e
 # ╠═1b2633c7-be84-4e70-9676-06cf059ab56c
-# ╠═f606b123-7607-49c9-9966-207be2df6f4c
-# ╠═eb9db4c4-4536-41ff-b8fb-083f5f96731c
 # ╠═9c996d28-f057-44c7-bbd6-79e1f91663ef
 # ╠═11d1e222-515d-48de-8770-42aa5f8117d3
-# ╠═ae4c6097-7ec0-40c3-8a0b-a424c70ebc97
-# ╠═4136fddb-ba5b-48ad-9246-d31ec184ee9b
 # ╠═4e23c80a-3c6d-4b40-b4ed-81c0c06d0fe4
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

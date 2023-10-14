@@ -3,11 +3,11 @@
 Files:
 - RandomForest-Regression.jl
     - Contains a random forest model, that is automatically tuned and then compared to a custom model the user can change using a dashboard.
-- EDA-Fri.jl
+- EDA-Imputation.jl
     - Contains the exploratory data analysis
-- SVMM2-Fri.jl
+- SVM-Binary.jl
     - Contains the Support Vector model
-- xgboost-Fri.jl
+- XGBoost-Binary.jl
     - Contains the XGBoost model
 - MultiRidge-Regression.jl
     - Contains the Multi Ridge Regression model

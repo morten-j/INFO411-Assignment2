@@ -276,10 +276,16 @@ By running the model on the test dataset we can see it performs a bit worse on t
 # ╔═╡ 46a1a4ca-aedc-4720-b6e8-784cd6f3aa7a
 begin
 	import Plots
-	Plots.plot(1:10, test_perf.per_fold, label="Test RMS per fold")
-	Plots.plot!(1:10, rep.history[1].per_fold, label="Training RMS per fold", legend=:bottomright)
+	Plots.plot(1:10, test_perf.per_fold, label="Test RMSE per fold")
+	Plots.plot!(1:10, rep.history[1].per_fold, label="Training RMSE per fold", legend=:bottomright)
 	Plots.xlabel!("Fold #")
-	Plots.ylabel!("RMS")
+	Plots.ylabel!("RMSE")
+end
+
+# ╔═╡ 10986701-a161-4d07-9a6a-6153c16b326f
+begin
+	y_pred = MLJ.predict(m, Xte)
+	accuracy(y_pred, yte)
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
@@ -2184,5 +2190,6 @@ version = "1.4.1+1"
 # ╠═ba23fde6-6b4a-4650-b218-a0069ab25093
 # ╟─699e8e3c-f976-4786-bc6e-322eef9cdb53
 # ╠═46a1a4ca-aedc-4720-b6e8-784cd6f3aa7a
+# ╠═10986701-a161-4d07-9a6a-6153c16b326f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

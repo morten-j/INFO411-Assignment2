@@ -4,7 +4,9 @@ Files:
 - RandomForest-Regression.jl
     - Contains a random forest model, that is automatically tuned and then compared to a custom model the user can change using a dashboard.
 - EDA-Imputation.jl
-    - Contains the exploratory data analysis
+    - Contains the exploratory data analysis and Imputation
+- EDA-Functions.jl
+    - Contains functions used in EDA-Imputation.jl
 - SVM-Binary.jl
     - Contains the Support Vector model
 - XGBoost-Binary.jl

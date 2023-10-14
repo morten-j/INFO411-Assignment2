@@ -20,8 +20,8 @@ using MLJ, Random, MLJLinearModels, MLJDecisionTreeInterface, CSV, DataFrames, P
 # ╔═╡ 4a204d99-c49d-49ce-91e6-926a28cd797e
 begin
 	using HTTP
-	github_tr_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2.csv"
-	github_te_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/sc_DS2_test.csv"
+	github_tr_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/Data/sc_DS2.csv"
+	github_te_url = "https://raw.githubusercontent.com/morten-j/INFO411-Assignment2/main/Data/sc_DS2_test.csv"
 	response_tr = HTTP.get(github_tr_url)
 	response_te = HTTP.get(github_te_url)
 	train_data = (CSV.File(IOBuffer(response_tr.body))) |> DataFrame

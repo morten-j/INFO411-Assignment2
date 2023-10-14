@@ -90,6 +90,7 @@ md"""
 
 # ╔═╡ 09b36204-eabe-44f8-8589-3b94c9303fec
 begin
+	Random.seed!(1)
 	rms_scores1 = Float64[]
 	cv = CV(nfolds=10, shuffle=true)
 	perf = evaluate(reg_lr, Xtr, ytr, resampling=cv, measure=rms, verbosity=0)
@@ -158,6 +159,7 @@ md"""
 
 # ╔═╡ d204135c-7790-49c7-a6eb-d3a267f323d9
 begin
+	Random.seed!(1)
 	rms_scores2 = Float64[]
 	cv1 = CV(nfolds=10)
 	reg_ri1 = RidgeRegressor()
@@ -232,6 +234,7 @@ md"""
 
 # ╔═╡ 11d1e222-515d-48de-8770-42aa5f8117d3
 begin
+Random.seed!(1)
 mean_list = Float64[]
 	for i in 2:20
 		fold_list = []
@@ -256,6 +259,7 @@ md"""
 
 # ╔═╡ 4e23c80a-3c6d-4b40-b4ed-81c0c06d0fe4
 begin
+Random.seed!(1)
 mean_list2 = Float64[]
 	for i in 2:20
 		fold_list = []
@@ -291,6 +295,22 @@ begin
 		plot(names(Xtr), abs.(coef) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients For Ridge Regression")
 	else
 		plot(names(Xtr), abs.(coef2) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients of Multivariate Regression")
+	end
+end
+
+# ╔═╡ 8d1e50d0-acd1-4176-9cc2-67de253c639f
+begin
+	#@info PlutoRunner.currently_running_cell_id
+	slider2 = @bind β2 Slider(1.0:1.0:2; show_value=true);
+end
+
+# ╔═╡ 6098ff92-50ae-4c66-bd63-f85431444819
+begin
+	#@info PlutoRunner.currently_running_cell_id
+	if β2 == 1.0
+		histogram(rms_scores1, bins=10, xlabel="RMS", ylabel="Frequency", title="RMS Scores Cross Validation 10 folds Multivariate Regression")
+	else
+		histogram(rms_scores2, bins=10, xlabel="RMS", ylabel="Frequency", title="RMS Scores Cross Validation 10 folds Ridge Regression")
 	end
 end
 
@@ -2268,5 +2288,7 @@ version = "1.4.1+1"
 # ╟─73e6ec50-5a1b-4f23-bce1-2605b173259d
 # ╠═d9d49bd7-684b-4906-b462-3cdc381d258b
 # ╠═e168f1bf-c90c-4512-a06f-36a8a12addc6
+# ╠═8d1e50d0-acd1-4176-9cc2-67de253c639f
+# ╠═6098ff92-50ae-4c66-bd63-f85431444819
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

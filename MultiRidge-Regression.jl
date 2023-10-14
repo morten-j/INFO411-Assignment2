@@ -15,7 +15,7 @@ macro bind(def, element)
 end
 
 # ╔═╡ 1f0032c0-60d9-11ee-1d60-47a6be9f6ee9
-using MLJ, Random, Printf, DataFrames, Printf, Plots, MLJLinearModels, CSV, Statistics, LinearRegressionKit, StatsModels, StatsPlots, HypothesisTests, PlutoUI, HypertextLiteral
+using MLJ, Random, Printf, DataFrames, Printf, Plots, MLJLinearModels, CSV, Statistics, LinearRegressionKit, StatsModels, StatsPlots, HypothesisTests, PlutoUI, HypertextLiteral, NearestNeighborModels
 
 # ╔═╡ 45e3aa0d-4706-4b22-b08e-c430eba60bb8
 begin
@@ -285,17 +285,7 @@ md"""
 # ╔═╡ d9d49bd7-684b-4906-b462-3cdc381d258b
 begin
 	#@info PlutoRunner.currently_running_cell_id
-	slider = @bind β Slider(1.0:1.0:2; show_value=true);
-end
-
-# ╔═╡ e168f1bf-c90c-4512-a06f-36a8a12addc6
-begin
-	#@info PlutoRunner.currently_running_cell_id
-	if β == 1.0
-		plot(names(Xtr), abs.(coef) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients For Ridge Regression")
-	else
-		plot(names(Xtr), abs.(coef2) , label="Line Plot", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients of Multivariate Regression")
-	end
+	slider = @bind β Slider(1.0:1.0:3; show_value=true);
 end
 
 # ╔═╡ 8d1e50d0-acd1-4176-9cc2-67de253c639f
@@ -314,6 +304,43 @@ begin
 	end
 end
 
+# ╔═╡ 6bc89d8c-44ae-4ffa-9935-497ef8bf4161
+begin
+	#@info PlutoRunner.currently_running_cell_id
+	slider3 = @bind β3 Slider(1.0:1.0:3.0; show_value=true);
+end
+
+# ╔═╡ e168f1bf-c90c-4512-a06f-36a8a12addc6
+begin
+	#@info PlutoRunner.currently_running_cell_id
+	if β == 1.0
+		plot(names(Xtr), abs.(coef) , label="Coefficients", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients For Ridge Regression")
+	elseif β == 2.0
+		plot(names(Xtr), abs.(coef2) , label="Coefficients", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients of Multivariate Regression")
+	else 
+		β3 == 3.0
+		plot(names(Xtr), abs.(coef) , label="Coefficients MR", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients For Ridge Regression")
+		plot!(names(Xtr), abs.(coef2) , label="Coefficients RR", xlabel="Features", ylabel="Coeff", title="Line Plot of Coefficients of M Regression and R Regression")
+	end
+end
+
+# ╔═╡ 2f259e6f-bfa6-43c8-bc96-02833e2b6c5b
+begin
+x_ax = [2:20]
+	#@info PlutoRunner.currently_running_cell_id
+	if β3 == 1.0
+		plot(x_ax, mean_list, label="RMSE Multivariate Regression", xlabel="# Folds", ylabel="RMSE", title="Multivariate Regression Cross Validation", xticks = (0:2:20))
+	
+	elseif β3 == 2.0
+		plot(x_ax, mean_list2, label="RMSE Ridge Regression", xlabel="# Folds", ylabel="RMSE", title="Ridge Regression Cross Validation", xticks = (0:2:20))
+
+	else 
+		β3 == 3.0
+		plot(x_ax, mean_list, label="RMSE Multivariate Regression", xlabel="# Folds", ylabel="RMSE", title="RMSE Score for MR and RR with different Folds")
+		plot!(x_ax, mean_list2, label="RMSE Ridge Regression", xlabel="# Folds", ylabel="RMSE", title="RMSE Score for MR and RR with Different Folds", xticks = (0:2:20))
+	end
+end
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
@@ -325,6 +352,7 @@ HypothesisTests = "09f84164-cd44-5f33-b23f-e6b0d136a0d5"
 LinearRegressionKit = "e91d531d-6e51-44a8-96b7-a10d5d51daa3"
 MLJ = "add582a8-e3ab-11e8-2d5e-e98b27df1bc7"
 MLJLinearModels = "6ee0df7b-362f-4a72-a706-9e79364fb692"
+NearestNeighborModels = "636a865e-7cf4-491e-846c-de09b730eb36"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
@@ -342,6 +370,7 @@ HypothesisTests = "~0.10.13"
 LinearRegressionKit = "~0.7.11"
 MLJ = "~0.19.5"
 MLJLinearModels = "~0.9.2"
+NearestNeighborModels = "~0.2.3"
 Plots = "~1.39.0"
 PlutoUI = "~0.7.52"
 StatsModels = "~0.7.3"
@@ -354,7 +383,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.9.2"
 manifest_format = "2.0"
-project_hash = "49d5528db37a22ccd697e6c6e356cc353add8c65"
+project_hash = "308af30aaac6374fe4440080d6e5311b22ec61d2"
 
 [[deps.ARFFFiles]]
 deps = ["CategoricalArrays", "Dates", "Parsers", "Tables"]
@@ -1345,6 +1374,12 @@ git-tree-sha1 = "b84e17976a40cb2bfe3ae7edb3673a8c630d4f95"
 uuid = "86f7a689-2022-50b4-a561-43c23ac3c673"
 version = "0.9.8"
 
+[[deps.NearestNeighborModels]]
+deps = ["Distances", "FillArrays", "InteractiveUtils", "LinearAlgebra", "MLJModelInterface", "NearestNeighbors", "Statistics", "StatsBase", "Tables"]
+git-tree-sha1 = "e411143a8362926e4284a54e745972e939fbab78"
+uuid = "636a865e-7cf4-491e-846c-de09b730eb36"
+version = "0.2.3"
+
 [[deps.NearestNeighbors]]
 deps = ["Distances", "StaticArrays"]
 git-tree-sha1 = "2c3726ceb3388917602169bed973dbc97f1b51a8"
@@ -2290,5 +2325,7 @@ version = "1.4.1+1"
 # ╠═e168f1bf-c90c-4512-a06f-36a8a12addc6
 # ╠═8d1e50d0-acd1-4176-9cc2-67de253c639f
 # ╠═6098ff92-50ae-4c66-bd63-f85431444819
+# ╠═6bc89d8c-44ae-4ffa-9935-497ef8bf4161
+# ╠═2f259e6f-bfa6-43c8-bc96-02833e2b6c5b
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002

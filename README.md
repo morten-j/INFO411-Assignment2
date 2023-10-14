@@ -1,6 +1,8 @@
 # INFO411-Assignment2
 
 Files:
+- Machine_Learning_assignment_2.pdf
+    - Report for the assignment
 - RandomForest-Regression.jl
     - Contains a random forest model, that is automatically tuned and then compared to a custom model the user can change using a dashboard.
 - EDA-Imputation.jl
